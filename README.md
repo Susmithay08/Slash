@@ -9,6 +9,9 @@ A fast-paced 3D cube-slashing game built with **React + TypeScript + Vite**.
 
 ![SLASH Preview](./Live.png)
 
+
+Play it here : https://slash-bysush.vercel.app/
+
 ---
 
 ## 🚀 Getting Started
