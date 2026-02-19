@@ -4,7 +4,7 @@ import { cloneVertices, copyVerticesTo, colorToHex, shadeColor, transformVertice
 const cameraDistance = 900;
 const sceneScale = 1;
 
-export function projectVertexTo(v: Vec3, target: Vec3) {
+export function projectVertexTo(v: Vec3, target: { x: number; y: number }) {
   const focalLength = cameraDistance * sceneScale;
   const depth = focalLength / (cameraDistance - v.z);
   target.x = v.x * depth;
@@ -18,21 +18,21 @@ export function projectVertex(v: Vec3) {
   v.y = v.y * depth;
 }
 
-export function computeTriMiddle(poly: Poly | ShadowPoly) {
+export function computeTriMiddle(poly: { vertices: Vec3[]; middle: Vec3 }) {
   const v = poly.vertices;
   poly.middle.x = (v[0].x + v[1].x + v[2].x) / 3;
   poly.middle.y = (v[0].y + v[1].y + v[2].y) / 3;
   poly.middle.z = (v[0].z + v[1].z + v[2].z) / 3;
 }
 
-export function computeQuadMiddle(poly: Poly | ShadowPoly) {
+export function computeQuadMiddle(poly: { vertices: Vec3[]; middle: Vec3 }) {
   const v = poly.vertices;
   poly.middle.x = (v[0].x + v[1].x + v[2].x + v[3].x) / 4;
   poly.middle.y = (v[0].y + v[1].y + v[2].y + v[3].y) / 4;
   poly.middle.z = (v[0].z + v[1].z + v[2].z + v[3].z) / 4;
 }
 
-export function computePolyMiddle(poly: Poly | ShadowPoly) {
+export function computePolyMiddle(poly: { vertices: Vec3[]; middle: Vec3 }) {
   if (poly.vertices.length === 3) computeTriMiddle(poly);
   else computeQuadMiddle(poly);
 }
@@ -45,7 +45,12 @@ export function computePolyDepth(poly: Poly) {
   poly.depth = Math.hypot(dX, dY, dZ);
 }
 
-export function computePolyNormal(poly: Poly | ShadowPoly, normalKey: 'normalWorld' | 'normalCamera') {
+export function computePolyNormal(poly: Poly, normalKey: 'normalWorld' | 'normalCamera'): void;
+export function computePolyNormal(poly: ShadowPoly, normalKey: 'normalWorld'): void;
+export function computePolyNormal(
+  poly: Poly | ShadowPoly,
+  normalKey: 'normalWorld' | 'normalCamera'
+): void {
   const v1 = poly.vertices[0], v2 = poly.vertices[1], v3 = poly.vertices[2];
   const ax = v1.x - v2.x, ay = v1.y - v2.y, az = v1.z - v2.z;
   const bx = v1.x - v3.x, by = v1.y - v3.y, bz = v1.z - v3.z;
@@ -53,8 +58,16 @@ export function computePolyNormal(poly: Poly | ShadowPoly, normalKey: 'normalWor
   const ny = az * bx - ax * bz;
   const nz = ax * by - ay * bx;
   const mag = Math.hypot(nx, ny, nz);
-  const n = poly[normalKey];
-  n.x = nx / mag; n.y = ny / mag; n.z = nz / mag;
+
+  if (normalKey === 'normalCamera' && 'normalCamera' in poly) {
+    poly.normalCamera.x = nx / mag;
+    poly.normalCamera.y = ny / mag;
+    poly.normalCamera.z = nz / mag;
+  } else {
+    poly.normalWorld.x = nx / mag;
+    poly.normalWorld.y = ny / mag;
+    poly.normalWorld.z = nz / mag;
+  }
 }
 
 export class Entity {
